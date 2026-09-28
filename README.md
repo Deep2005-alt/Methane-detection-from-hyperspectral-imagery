@@ -26,7 +26,6 @@ If this work is useful to you, please consider citing our paper:
 ```
 @inproceedings{kumar2020deep,
   title={Deep Remote Sensing Methods for Methane Detection in Overhead Hyperspectral Imagery},
-  author={Kumar, Satish and Torres, Carlos and Ulutan, Oytun and Ayasse, Alana and Roberts, Dar and Manjunath, BS},
   booktitle={2020 IEEE Winter Conference on Applications of Computer Vision (WACV)},
   pages={1765--1774},
   year={2020},
