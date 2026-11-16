@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Methane Detection AI{% endblock %}
+{% block page_title %}Analytics Overview{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+  <!-- Welcome Section -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-white">System Intelligence</h1>
+      <p class="text-slate-400 text-sm">Real-time status of the hyperspectral plume detection pipeline.</p>
+    </div}
+    <div class="flex gap-3">
+      <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        All Systems Operational
+      </span>
+    </div>
+  </div>
+
+  <!-- Primary Stat Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="glass-card rounded-2xl p-6 space-y-3">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="text-xs font-semibold uppercase tracking-wider">Flightline ID</span>
+        <i class="fa-solid fa-plane-departure text-emerald-500"></i>
+      </div>
+      <div class="text-2xl font-bold text-white truncate" id="stat-flightline">ang20150419t161445</div>
+      <div class="text-xs text-slate-500">AVIRIS-NG Calibrated</div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 space-y-3">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="text-xs font-semibold uppercase tracking-wider">Mask Res</span>
+        <i class="fa-solid fa-vector-square text-cyan-500"></i>
+      </div>
+      <div class="text-2xl font-bold text-white" id="stat-resolution">22,038 x 1,303</div>
+      <div class="text-xs text-slate-500">Ground Truth Baseline</div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 space-y-3">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="text-xs font-semibold uppercase tracking-wider">Total Tiles</span>
+        <i class="fa-solid fa-table-cells text-purple-500"></i>
+      </div>
+      <div class="text-2xl font-bold text-white" id="stat-tiles">1,903</div>
+      <div class="text-xs text-slate-500">256x256 Processing Units</div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 space-y-3">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="text-xs font-semibold uppercase tracking-wider">Active Plumes</span>
+        <i class="fa-solid fa-fire text-amber-500"></i>
+      </div>
+      <div class="text-2xl font-bold text-amber-400" id="stat-plumes">18</div>
+      <div class="text-xs text-slate-500">Verified Anomalies</div>
+    </div>
+  </div>
+
+  <!-- Detailed Insights Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Architecture Pipeline -->
+    <div class="lg:col-span-1 glass-card rounded-2xl p-6 space-y-6">
+      <h3 class="font-semibold text-white text-lg flex items-center gap-2">
+        <i class="fa-solid fa-network-wired text-cyan-400"></i>
+        Pipeline Flow
+      </h3>
+      <div class="space-y-4">
+        <div class="group p-4 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-emerald-500/50 transition">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold border border-emerald-500/30">1</span>
+            <span class="text-sm font-medium text-slate-200">Matched Filter</span>
+          </div>
+          <p class="text-xs text-slate-500 pl-9">Covariance-based radiance whitening and noise reduction.</p>
+        </div>
+        <div class="group p-4 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-cyan-500/50 transition">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold border border-cyan-500/30">2</span>
+            <span class="text-sm font-medium text-slate-200">Preprocessing</span>
+          </div>
+          <p class="text-xs text-slate-500 pl-9">Hyperspectral tiling & DFS boundary generation.</p>
+        </div>
+        <div class="group p-4 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-purple-500/50 transition">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] font-bold border border-purple-500/30">3</span>
+            <span class="text-sm font-medium text-slate-200">Ensemble Mask R-CNN</span>
+          </div>
+          <p class="text-xs text-slate-500 pl-9">Deep learning inference for precise plume segmentation.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flightline Strip Visualizer -->
+    <div class="lg:col-span-2 glass-card rounded-2xl p-6 flex flex-col">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="font-semibold text-white text-lg flex items-center gap-2">
+          <i class="fa-solid fa-map text-emerald-400"></i>
+          Flightline Overview
+        </h3>
+        <span class="text-xs text-slate-500">Strip Ratio: 17:1</span>
+      </div>
+      <div class="flex-1 bg-slate-950 rounded-xl p-4 border border-slate-800 flex items-center justify-center relative group overflow-hidden">
+        <img src="/api/thumbnail" alt="Flightline Strip" class="max-h-full object-contain transition duration-500 group-hover:scale-105">
+        <div class="absolute bottom-4 left-4 right-4 bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-lg border border-slate-700/50 flex items-center justify-between text-[11px] text-slate-300">
+          <span>AVIRIS-NG Radiance Strip</span>
+          <span class="text-emerald-400 font-medium"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Plume Regions Detected</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spectral band concentration charts (Recharts) -->
+  <div class="space-y-4">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-wave-square text-emerald-400"></i>
+          CH₄ Concentration by Spectral Band
+        </h3>
+        <p class="text-xs text-slate-500 mt-1">
+          AVIRIS-NG 432-band cube, grouped into overlapping 50-band H-MRCNN detector windows.
+        </p>
+      </div>
+      <p id="peak-band-label" class="text-xs text-slate-400">Loading methane signature…</p>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+      <div class="xl:col-span-3 glass-card rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-sm font-semibold text-slate-200">Band-set mean concentration</h4>
+          <span class="text-[10px] uppercase tracking-widest text-slate-500">Bar chart</span>
+        </div>
+        <div id="band-bar-chart" class="h-80 w-full"></div>
+      </div>
+      <div class="xl:col-span-2 glass-card rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-sm font-semibold text-slate-200">Tile × wavelength heatmap</h4>
+          <span class="text-[10px] uppercase tracking-widest text-slate-500">Heatmap</span>
+        </div>
+        <div id="band-heat-chart" class="h-80 w-full"></div>
+        <div class="mt-3 flex items-center justify-between text-[10px] text-slate-500">
+          <span>Low CH₄</span>
+          <div class="flex-1 mx-3 h-1.5 rounded-full bg-gradient-to-r from-slate-800 via-emerald-600 to-amber-400"></div>
+          <span>High CH₄</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js" crossorigin></script>
+<script src="https://unpkg.com/recharts@2.15.4/umd/Recharts.min.js" crossorigin></script>
+<script>
+  async function fetchStats() {
+    try {
+      const res = await fetch('/api/stats');
+      const data = await res.json();
+      document.getElementById('stat-flightline').innerText = data.flightline_id || '-';
+      document.getElementById('stat-resolution').innerText = data.mask_resolution || '-';
+      document.getElementById('stat-tiles').innerText = (data.total_tiles || 0).toLocaleString();
+      document.getElementById('stat-plumes').innerText = (data.tiles_with_plumes || 0).toLocaleString();
+    } catch (e) {
+      console.error('Failed to load stats:', e);
+    }
+  }
+
+  function heatColor(value, maxValue) {
+    const t = Math.max(0, Math.min(1, value / (maxValue || 1)));
+    if (t < 0.35) {
+      const u = t / 0.35;
+      return `rgb(${15 + u * 4}, ${23 + u * 140}, ${42 + u * 87})`;
+    }
+    if (t < 0.75) {
+      const u = (t - 0.35) / 0.4;
+      return `rgb(${16 + u * 180}, ${185 - u * 40}, ${129 - u * 80})`;
+    }
+    const u = (t - 0.75) / 0.25;
+    return `rgb(${196 + u * 55}, ${145 + u * 46}, ${49 + u * 15})`;
+  }
+
+  function renderSpectralCharts(payload) {
+    const e = React.createElement;
+    const {
+      ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+      Tooltip, ScatterChart, Scatter, Cell, ZAxis
+    } = window.Recharts;
+
+    const peak = payload.peak_band;
+    if (peak) {
+      document.getElementById('peak-band-label').innerText =
+        `Peak absorption: band ${peak.band} @ ${peak.wavelength_nm} nm (${peak.concentration.toFixed(1)}%)`;
+    }
+
+    const tooltipStyle = {
+      backgroundColor: '#0f172a',
+      border: '1px solid #334155',
+      borderRadius: '12px',
+      fontSize: '12px'
+    };
+
+    const barRoot = ReactDOM.createRoot(document.getElementById('band-bar-chart'));
+    barRoot.render(
+      e(ResponsiveContainer, { width: '100%', height: '100%' },
+        e(BarChart, { data: payload.band_sets, margin: { top: 8, right: 8, left: 0, bottom: 28 } },
+          e(CartesianGrid, { strokeDasharray: '3 3', stroke: '#1e293b', vertical: false }),
+          e(XAxis, {
+            dataKey: 'set',
+            tick: { fill: '#94a3b8', fontSize: 11 },
+            axisLine: { stroke: '#334155' },
+            tickLine: false
+          }),
+          e(YAxis, {
+            tick: { fill: '#94a3b8', fontSize: 11 },
+            axisLine: false,
+            tickLine: false,
+            label: { value: 'CH₄ %', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 11 }
+          }),
+          e(Tooltip, {
+            contentStyle: tooltipStyle,
+            formatter: function (value, name, props) {
+              const row = props && props.payload;
+              if (!row) return [value, name];
+              return [
+                value.toFixed(2) + '%  ·  ' + row.label + '  ·  peak ' + row.peak_wavelength_nm + ' nm',
+                'Concentration'
+              ];
+            }
+          }),
+          e(Bar, { dataKey: 'concentration', radius: [6, 6, 0, 0], maxBarSize: 28 },
+            payload.band_sets.map(function (entry, index) {
+              return e(Cell, { key: 'bar-' + index, fill: heatColor(entry.concentration, 40) });
+            })
+          )
+        )
+      )
+    );
+
+    const maxHeat = Math.max.apply(null, payload.heatmap.map(function (d) { return d.concentration; }).concat([1]));
+    const heatRoot = ReactDOM.createRoot(document.getElementById('band-heat-chart'));
+    heatRoot.render(
+      e(ResponsiveContainer, { width: '100%', height: '100%' },
+        e(ScatterChart, { margin: { top: 8, right: 12, left: 28, bottom: 28 } },
+          e(XAxis, {
+            type: 'category',
+            dataKey: 'band',
+            name: 'Wavelength',
+            tick: { fill: '#94a3b8', fontSize: 9 },
+            axisLine: { stroke: '#334155' },
+            tickLine: false,
+            interval: 2,
+            label: { value: 'Wavelength (nm)', position: 'insideBottom', offset: -12, fill: '#64748b', fontSize: 11 }
+          }),
+          e(YAxis, {
+            type: 'category',
+            dataKey: 'tile',
+            name: 'Tile',
+            tick: { fill: '#94a3b8', fontSize: 10 },
+            axisLine: false,
+            tickLine: false,
+            width: 56
+          }),
+          e(ZAxis, { type: 'number', dataKey: 'concentration', range: [90, 90] }),
+          e(Tooltip, {
+            cursor: { stroke: '#334155' },
+            contentStyle: tooltipStyle,
+            formatter: function (value, name, props) {
+              const row = props && props.payload;
+              return [value.toFixed(2) + '% @ ' + (row && row.wavelength ? row.wavelength : ''), 'CH₄'];
+            }
+          }),
+          e(Scatter, { data: payload.heatmap, shape: 'square' },
+            payload.heatmap.map(function (entry, index) {
+              return e(Cell, { key: 'heat-' + index, fill: heatColor(entry.concentration, maxHeat) });
+            })
+          )
+        )
+      )
+    );
+  }
+
+  async function fetchSpectralBands() {
+    try {
+      const res = await fetch('/api/spectral_bands');
+      const data = await res.json();
+      if (!window.Recharts) {
+        document.getElementById('peak-band-label').innerText = 'Recharts failed to load.';
+        return;
+      }
+      renderSpectralCharts(data);
+    } catch (e) {
+      console.error('Failed to load spectral bands:', e);
+      document.getElementById('peak-band-label').innerText = 'Could not load spectral band data.';
+    }
+  }
+
+  fetchStats();
+  fetchSpectralBands();
+</script>
+{% endblock %}

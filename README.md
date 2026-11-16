@@ -21,6 +21,33 @@ This repository includes:
 
 The whole repo folder structure follows the same style as written in the paper for easy reproducibility and easy to extend. If you use it in your research, please consider citing our paper (bibtex below)
 
+## Project Details
+
+### 🛠 Technical Stack
+* **Language:** Python (3.5 – 3.8)
+* **Deep Learning Framework:** TensorFlow $\le 1.8$
+* **Hardware Acceleration:** CUDA 9.0 & cuDNN
+* **Core Architecture:** Mask R-CNN
+* **Specialized Libraries:** Modified `spectral` library for hyperspectral data cubes.
+
+### 🌟 Key Features & Methodology
+The project provides two distinct detection pipelines:
+1. **Single-Detector Pipeline:** Works on 4-channel data.
+2. **Ensemble-Detector Pipeline (H-MRCNN):** 
+   * Works on raw 432-channel hyperspectral data.
+   * Processes data in overlapping sets (e.g., 50 channels per set with 25-channel overlap).
+   * **Pipeline:** Matched Filter & Ortho-correction $\rightarrow$ 3-Channel Tile Generation (Terrain, Local Norm, Global Norm) $\rightarrow$ Mask R-CNN Detection.
+
+### 📂 Data & Tile Catalog
+| Category | Path | Description |
+| :--- | :--- | :--- |
+| **Raw Data** | `ensemble_detectors/data/raw_data/` | Original 432-channel hyperspectral files. |
+| **Ground Truth** | `ensemble_detectors/data/gt_data/` | Mask annotations used for training. |
+| **Spectral Lib** | `ensemble_detectors/data/gas_signature/` | Contains `methane_signature.txt`. |
+| **Processed Tiles**| `ensemble_detectors/data/train_data/` | 3-channel training tiles. |
+| **Annotations** | `ensemble_detectors/src/gt_jsonfile/` | JSON files for Mask R-CNN. |
+| **Model Weights** | `ensemble_detectors/src/Algorithm_3_mrcnn/logs/` | Weights for each band-set detector. |
+
 ## Citing
 If this work is useful to you, please consider citing our paper:
 ```
@@ -57,4 +84,3 @@ For Running ensemble-detector we need some pre-processing. Follow the [README.md
 ```
 ensemble_detector/README.md
 ```
-

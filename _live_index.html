@@ -1,0 +1,381 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Methane Detection | Hyperspectral AI Server</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .plume-badge { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 text-emerald-400">
+          <i class="fa-solid fa-satellite text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            H-MRCNN Methane Detection Server
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">ONLINE</span>
+          </h1>
+          <p class="text-xs text-slate-400">Deep Remote Sensing for Autonomous CH4 Plume Detection (AVIRIS-NG / WACV)</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3 text-xs">
+        <span class="text-slate-400 hidden sm:inline"><i class="fa-solid fa-server mr-1 text-slate-500"></i> Local Server :5000</span>
+        <a href="#detector-section" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition flex items-center gap-1.5 shadow-lg shadow-emerald-900/30">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Run Detection
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="glass-card rounded-xl p-4">
+        <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <span>Flightline ID</span>
+          <i class="fa-solid fa-plane-departure text-slate-500"></i>
+        </div>
+        <div class="text-xl font-bold text-white truncate" id="stat-flightline">ang20150419t161445</div>
+        <div class="text-xs text-emerald-400 mt-1"><i class="fa-solid fa-check-circle mr-1"></i> AVIRIS-NG Calibrated</div>
+      </div>
+
+      <div class="glass-card rounded-xl p-4">
+        <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <span>Mask Resolution</span>
+          <i class="fa-solid fa-vector-square text-slate-500"></i>
+        </div>
+        <div class="text-xl font-bold text-white" id="stat-resolution">22,038 x 1,303</div>
+        <div class="text-xs text-slate-400 mt-1">Ground Truth Binary Mask</div>
+      </div>
+
+      <div class="glass-card rounded-xl p-4">
+        <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <span>Generated Tiles</span>
+          <i class="fa-solid fa-table-cells text-slate-500"></i>
+        </div>
+        <div class="text-xl font-bold text-emerald-400" id="stat-tiles">1,903</div>
+        <div class="text-xs text-slate-400 mt-1">256 x 256 px Tiles Generated</div>
+      </div>
+
+      <div class="glass-card rounded-xl p-4">
+        <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <span>Active Plume Tiles</span>
+          <i class="fa-solid fa-fire text-amber-500"></i>
+        </div>
+        <div class="text-xl font-bold text-amber-400" id="stat-plumes">18</div>
+        <div class="text-xs text-slate-400 mt-1">Contours & Polygons Traced</div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Tabs -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left Column: Flightline Strip & Pipeline Status -->
+      <div class="lg:col-span-1 space-y-6">
+        <!-- Flightline Strip Card -->
+        <div class="glass-card rounded-xl p-4 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-semibold text-white text-sm flex items-center gap-2">
+              <i class="fa-solid fa-map text-emerald-400"></i> Flightline Full Strip
+            </h2>
+            <span class="text-xs text-slate-400">22k px length</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-3">Overhead flightline captured over oil & gas basins. Plumes appear as high-radiance anomalies.</p>
+          <div class="bg-slate-900/90 rounded-lg p-2 flex justify-center border border-slate-800 overflow-hidden relative" style="max-height: 480px;">
+            <img src="/api/thumbnail" alt="Flightline Mask Thumbnail" class="h-full object-contain rounded hover:scale-105 transition duration-300">
+            <div class="absolute bottom-3 left-3 right-3 bg-slate-950/80 backdrop-blur px-2.5 py-1.5 rounded text-[11px] text-slate-300 border border-slate-700/60 flex items-center justify-between">
+              <span>Strip ratio: 17:1</span>
+              <span class="text-emerald-400">Plume Regions Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pipeline Architecture Architecture Card -->
+        <div class="glass-card rounded-xl p-4 space-y-3">
+          <h2 class="font-semibold text-white text-sm flex items-center gap-2">
+            <i class="fa-solid fa-network-wired text-cyan-400"></i> H-MRCNN Architecture Flow
+          </h2>
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2.5">
+              <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px] mt-0.5">1</div>
+              <div>
+                <div class="font-medium text-slate-200">Algorithm 1: Matched Filter</div>
+                <div class="text-slate-400 text-[11px]">Columns-wise covariance & radiance whitening.</div>
+              </div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2.5">
+              <div class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-[10px] mt-0.5">2</div>
+              <div>
+                <div class="font-medium text-slate-200">Algorithm 2: Preprocessing & Tiling</div>
+                <div class="text-slate-400 text-[11px]">256x256 radiance tiles + DFS boundary generation.</div>
+              </div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2.5">
+              <div class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-[10px] mt-0.5">3</div>
+              <div>
+                <div class="font-medium text-slate-200">Algorithm 3: Ensemble Mask R-CNN</div>
+                <div class="text-slate-400 text-[11px]">Multi-band ensemble detectors for plume detection.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Tile Inspector & Real-time Detector -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- Live Detector Sandbox -->
+        <div id="detector-section" class="glass-card rounded-xl p-5 border border-emerald-500/20">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="font-semibold text-white text-base flex items-center gap-2">
+                <i class="fa-solid fa-magnifying-glass-chart text-emerald-400"></i> Plume Detector & Segmentation Sandbox
+              </h2>
+              <p class="text-xs text-slate-400">Select any tile or upload an image to run plume segmentation and extract boundary polygons.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Input / Selection Panel -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-xs">
+                <label class="font-medium text-slate-300">Select Sample Plume Tile</label>
+                <span class="text-slate-500">Pre-loaded from annotations</span>
+              </div>
+              <select id="sample-selector" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500" onchange="loadSelectedSample()">
+                <option value="ang20150419t161445_cmf_v1f_img_img_radiance_25_2.png">Tile Row 25, Col 2 (High Plume Concentration)</option>
+                <option value="ang20150419t161445_cmf_v1f_img_img_radiance_25_3.png">Tile Row 25, Col 3 (Plume Tail)</option>
+                <option value="ang20150419t161445_cmf_v1f_img_img_radiance_26_2.png">Tile Row 26, Col 2 (Plume Source)</option>
+                <option value="ang20150419t161445_cmf_v1f_img_img_radiance_42_1.png">Tile Row 42, Col 1 (Secondary Source)</option>
+              </select>
+
+              <div class="flex items-center gap-2 pt-1">
+                <label class="flex-1 cursor-pointer">
+                  <div class="border border-dashed border-slate-700 hover:border-emerald-500 rounded-lg p-3 text-center transition bg-slate-900/50">
+                    <i class="fa-solid fa-cloud-arrow-up text-slate-400 mb-1"></i>
+                    <div class="text-xs text-slate-300">Upload Custom Tile / Image</div>
+                  </div>
+                  <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+                </label>
+              </div>
+
+              <!-- Threshold Parameter Slider -->
+              <div class="pt-2">
+                <div class="flex justify-between text-xs text-slate-400 mb-1">
+                  <span>Detection Sensitivity Threshold</span>
+                  <span id="thresh-val" class="font-semibold text-emerald-400">180</span>
+                </div>
+                <input type="range" id="thresh-slider" min="100" max="240" value="180" class="w-full accent-emerald-500 cursor-pointer" oninput="document.getElementById('thresh-val').innerText = this.value">
+              </div>
+
+              <button onclick="runDetection()" class="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
+                <i class="fa-solid fa-play"></i> Run Plume Segmentation
+              </button>
+            </div>
+
+            <!-- Visualization Result Panel -->
+            <div class="bg-slate-900/90 rounded-lg p-3 border border-slate-800 flex flex-col items-center justify-center min-h-[260px]">
+              <div id="detection-loading" class="hidden text-center">
+                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-emerald-400 mb-2"></i>
+                <p class="text-xs text-slate-400">Processing plume contours...</p>
+              </div>
+              <div id="detection-result-container" class="w-full text-center space-y-2">
+                <img id="detection-result-img" src="/api/tile_annotated/ang20150419t161445_cmf_v1f_img_img_radiance_25_2.png" alt="Detection Result" class="max-h-56 mx-auto rounded border border-slate-700 shadow-md">
+                <div id="detection-meta" class="text-[11px] text-slate-400 text-left bg-slate-950/60 p-2.5 rounded border border-slate-800 space-y-1">
+                  <div class="flex justify-between"><span class="text-slate-400">Plume Contours:</span> <span class="text-emerald-400 font-semibold" id="meta-count">1 Source Detected</span></div>
+                  <div class="flex justify-between"><span class="text-slate-400">Confidence:</span> <span class="text-cyan-400 font-semibold" id="meta-conf">98.2%</span></div>
+                  <div class="flex justify-between"><span class="text-slate-400">Total Plume Area:</span> <span class="text-amber-400 font-semibold" id="meta-area">432 px²</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile Explorer Gallery -->
+        <div class="glass-card rounded-xl p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-semibold text-white text-base flex items-center gap-2">
+                <i class="fa-solid fa-images text-cyan-400"></i> Tile Explorer & Annotations
+              </h2>
+              <p class="text-xs text-slate-400">Browse through the 1,903 generated 256x256 flightline tiles.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="filter-all" onclick="setFilter(false)" class="px-2.5 py-1 rounded text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">All Tiles</button>
+              <button id="filter-plumes" onclick="setFilter(true)" class="px-2.5 py-1 rounded text-xs font-medium bg-emerald-600 text-white transition">Plumes Only (18)</button>
+              <label class="flex items-center gap-1.5 text-xs text-slate-300 ml-2 cursor-pointer">
+                <input type="checkbox" id="toggle-annotations" checked onchange="renderTiles()" class="accent-emerald-500 rounded">
+                <span>Overlay GT</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Tile Grid -->
+          <div id="tile-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 min-h-[300px]">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
+            <span id="page-info">Showing page 1 of 1</span>
+            <div class="flex gap-2">
+              <button id="prev-btn" onclick="prevPage()" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 transition">Previous</button>
+              <button id="next-btn" onclick="nextPage()" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 transition">Next</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500 mt-12">
+    Methane Detection from Hyperspectral Imagery &bull; WACV 2020 &bull; Local Server Running on Port 5000
+  </footer>
+
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let plumesOnly = true;
+    let selectedTileFilename = 'ang20150419t161445_cmf_v1f_img_img_radiance_25_2.png';
+    let currentUploadedFile = null;
+
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('stat-flightline').innerText = data.flightline_id || '-';
+        document.getElementById('stat-resolution').innerText = data.mask_resolution || '-';
+        document.getElementById('stat-tiles').innerText = (data.total_tiles || 0).toLocaleString();
+        document.getElementById('stat-plumes').innerText = (data.tiles_with_plumes || 0).toLocaleString();
+        document.getElementById('filter-plumes').innerText = `Plumes Only (${data.tiles_with_plumes || 18})`;
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      }
+    }
+
+    async function loadTiles(page = 1) {
+      currentPage = page;
+      const overlayOn = document.getElementById('toggle-annotations').checked;
+      const res = await fetch(`/api/tiles?plumes_only=${plumesOnly}&page=${page}&limit=12`);
+      const data = await res.json();
+      totalPages = data.pages || 1;
+      document.getElementById('page-info').innerText = `Page ${data.page} of ${totalPages} (${data.total} tiles)`;
+      document.getElementById('prev-btn').disabled = currentPage <= 1;
+      document.getElementById('next-btn').disabled = currentPage >= totalPages;
+
+      const grid = document.getElementById('tile-grid');
+      grid.innerHTML = '';
+
+      data.tiles.forEach(t => {
+        const imgUrl = overlayOn && t.has_plume ? t.annotated_url : t.url;
+        const card = document.createElement('div');
+        card.className = `group relative bg-slate-900 border ${t.has_plume ? 'border-emerald-500/40' : 'border-slate-800'} rounded-lg overflow-hidden p-1.5 cursor-pointer hover:border-emerald-400 transition`;
+        card.onclick = () => selectTileForDetection(t.filename);
+
+        card.innerHTML = `
+          <div class="aspect-square bg-slate-950 rounded overflow-hidden flex items-center justify-center relative">
+            <img src="${imgUrl}" alt="${t.filename}" class="w-full h-full object-cover">
+            ${t.has_plume ? '<span class="absolute top-1 right-1 bg-emerald-600/90 text-white text-[9px] px-1 py-0.5 rounded font-bold">CH4</span>' : ''}
+          </div>
+          <div class="text-[10px] text-slate-400 mt-1 truncate font-mono">r${t.grid_row}_c${t.grid_col}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderTiles() {
+      loadTiles(currentPage);
+    }
+
+    function setFilter(onlyPlumes) {
+      plumesOnly = onlyPlumes;
+      document.getElementById('filter-all').className = onlyPlumes ?
+        'px-2.5 py-1 rounded text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition' :
+        'px-2.5 py-1 rounded text-xs font-medium bg-emerald-600 text-white transition';
+      document.getElementById('filter-plumes').className = onlyPlumes ?
+        'px-2.5 py-1 rounded text-xs font-medium bg-emerald-600 text-white transition' :
+        'px-2.5 py-1 rounded text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+      loadTiles(1);
+    }
+
+    function prevPage() { if (currentPage > 1) loadTiles(currentPage - 1); }
+    function nextPage() { if (currentPage < totalPages) loadTiles(currentPage + 1); }
+
+    function selectTileForDetection(fname) {
+      selectedTileFilename = fname;
+      currentUploadedFile = null;
+      runDetection();
+    }
+
+    function loadSelectedSample() {
+      selectedTileFilename = document.getElementById('sample-selector').value;
+      currentUploadedFile = null;
+      runDetection();
+    }
+
+    function handleFileUpload(e) {
+      if (e.target.files && e.target.files[0]) {
+        currentUploadedFile = e.target.files[0];
+        runDetection();
+      }
+    }
+
+    async function runDetection() {
+      const loader = document.getElementById('detection-loading');
+      const container = document.getElementById('detection-result-container');
+      loader.classList.remove('hidden');
+      container.classList.add('hidden');
+
+      const thresh = parseInt(document.getElementById('thresh-slider').value);
+
+      try {
+        let res;
+        if (currentUploadedFile) {
+          const fd = new FormData();
+          fd.append('file', currentUploadedFile);
+          fd.append('threshold', thresh);
+          res = await fetch('/api/detect', { method: 'POST', body: fd });
+        } else {
+          res = await fetch('/api/detect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: selectedTileFilename, threshold: thresh })
+          });
+        }
+
+        const data = await res.json();
+        document.getElementById('detection-result-img').src = data.visualized_image;
+        document.getElementById('meta-count').innerText = `${data.plumes_detected} Plume(s) Detected`;
+        const avgConf = data.detections.length > 0 ? (data.detections.reduce((a, b) => a + b.confidence, 0) / data.detections.length * 100).toFixed(1) + '%' : 'N/A';
+        document.getElementById('meta-conf').innerText = avgConf;
+        document.getElementById('meta-area').innerText = `${Math.round(data.total_plume_area)} px²`;
+      } catch (err) {
+        console.error('Detection failed:', err);
+      } finally {
+        loader.classList.add('hidden');
+        container.classList.remove('hidden');
+      }
+    }
+
+    // Initialize
+    fetchStats();
+    loadTiles(1);
+    runDetection();
+  </script>
+</body>
+</html>

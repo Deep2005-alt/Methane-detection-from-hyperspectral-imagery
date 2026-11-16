@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Methane Plume Detector | H-MRCNN AI{% endblock %}
+{% block page_title %}Plume Detection Analysis{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Back Navigation -->
+    <div class="flex items-center gap-2 mb-4">
+        <a href="/dashboard" class="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-emerald-400 transition-colors group">
+            <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Controls Panel -->
+        <div class="lg:col-span-4 space-y-6">
+            <div class="glass-card p-8 rounded-3xl space-y-8">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-emerald-400"></i>
+                        Detection Parameters
+                    </h3>
+                    <p class="text-xs text-slate-500">Configure the spectral analysis pipeline</p>
+                </div>
+
+                <!-- Upload Area -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Input Imagery</label>
+                    <div class="relative group">
+                        <input type="file" id="imageInput" class="hidden" onchange="previewImage()">
+                        <label for="imageInput" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-700 rounded-2xl cursor-pointer bg-slate-900/40 group-hover:border-emerald-500/50 group-hover:bg-slate-900/60 transition-all duration-300">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa-solid fa-cloud-arrow-up text-slate-500 group-hover:text-emerald-400 text-2xl mb-2 transition-colors"></i>
+                                <p class="text-xs text-slate-400 group-hover:text-slate-300" id="fileName">Click to upload hyperspectral tile</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="space-y-6">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sensitivity Threshold</label>
+                            <span id="threshVal" class="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">180</span>
+                        </div>
+                        <input type="range" id="threshSlider" min="100" max="255" value="180" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="document.getElementById('threshVal').innerText = this.value">
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Analysis Resolution</label>
+                        <div class="relative">
+                            <select id="tileSize" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none transition cursor-pointer">
+                                <option value="256">256 x 256 (Standard)</option>
+                                <option value="128">128 x 128 (Medium)</option>
+                                <option value="64">64 x 64 (Fast)</option>
+                                <option value="32">32 x 32 (Draft)</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-500">
+                                <i class="fa-solid fa-chevron-down text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="runDetection()" id="runBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-emerald-900/40 active:scale-[0.98] flex items-center justify-center gap-3 group">
+                    <span id="btnText">Execute Analysis</span>
+                    <i class="fa-solid fa-bolt-lightning group-hover:scale-125 transition-transform"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Area -->
+        <div class="lg:col-span-8 space-y-8">
+            <!-- Visuals Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Input Source</p>
+                        <i class="fa-solid fa-image text-slate-600 text-xs"></i>
+                    </div>
+                    <div class="glass-card rounded-3xl overflow-hidden bg-slate-950 min-h-[400px] flex items-center justify-center relative group">
+                        <img id="originalImg" class="max-w-full h-auto transition-transform duration-500 group-hover:scale-105" src="">
+                        <div id="originalPlaceholder" class="absolute inset-0 flex items-center justify-center text-slate-700">
+                            <i class="fa-solid fa-image text-5xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <p class="text-xs font-bold text-emerald-500 uppercase tracking-widest">Inference Result</p>
+                        <i class="fa-solid fa-wand-magic-sparkles text-emerald-600 text-xs"></i>
+                    </div>
+                    <div class="glass-card rounded-3xl overflow-hidden bg-slate-950 min-h-[400px] flex items-center justify-center relative group border-2 border-emerald-500/20">
+                        <img id="resultImg" class="max-w-full h-auto transition-transform duration-500 group-hover:scale-105" src="">
+                        <div id="resultPlaceholder" class="absolute inset-0 flex items-center justify-center text-slate-700">
+                            <i class="fa-solid fa-microscope text-5xl"></i>
+                        </div>
+                        <div id="loadingOverlay" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+                            <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-800 h-12 w-12 mb-4"></div>
+                            <p class="text-emerald-400 font-bold animate-pulse">Analyzing Spectra...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Stats -->
+            <div id="stats" class="hidden glass-card p-8 rounded-3xl grid grid-cols-1 sm:grid-cols-3 gap-8 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent"></div>
+                <div class="space-y-1">
+                    <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Plumes Detected</p>
+                    <p id="statCount" class="text-4xl font-black text-white">-</p>
+                </div>
+                <div class="space-y-1 border-x border-slate-800">
+                    <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Total Plume Area</p>
+                    <p id="statArea" class="text-4xl font-black text-white">-</p>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Analysis Status</p>
+                    <p id="statStatus" class="text-4xl font-black text-emerald-400">Ready</p>
+                </div>
+            </div>
+
+            <!-- Analysis Table -->
+            <div id="coordsContainer" class="hidden space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Spatial Analytics Data</p>
+                    <span class="text-[10px] text-slate-600">Coordinate System: Pixel-Space</span>
+                </div>
+                <div class="glass-card rounded-3xl overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/50 text-slate-400">
+                            <tr class="text-xs uppercase tracking-wider">
+                                <th class="px-6 py-4 font-semibold">Plume ID</th>
+                                <th class="px-6 py-4 font-semibold">Center X</th>
+                                <th class="px-6 py-4 font-semibold">Center Y</th>
+                                <th class="px-6 py-4 font-semibold">Methane %</th>
+                                <th class="px-6 py-4 font-semibold">Area (px²)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coordsBody" class="divide-y divide-slate-800">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function previewImage() {
+            const fileInput = document.getElementById('imageInput');
+            const fileName = document.getElementById('fileName');
+            const originalImg = document.getElementById('originalImg');
+            const placeholder = document.getElementById('originalPlaceholder');
+
+            if (fileInput.files && fileInput.files[0]) {
+                fileName.innerText = fileInput.files[0].name;
+                originalImg.src = URL.createObjectURL(fileInput.files[0]);
+                placeholder.classList.add('hidden');
+            }
+        }
+
+        async function runDetection() {
+            const fileInput = document.getElementById('imageInput');
+            const threshold = document.getElementById('threshSlider').value;
+            const tileSize = document.getElementById('tileSize').value;
+            const runBtn = document.getElementById('runBtn');
+            const btnText = document.getElementById('btnText');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            if (!fileInput.files[0]) return alert('Please upload an image first');
+
+            runBtn.disabled = true;
+            runBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            btnText.innerText = 'Analyzing...';
+            loadingOverlay.classList.remove('hidden');
+
+            const fd = new FormData();
+            fd.append('file', fileInput.files[0]);
+            fd.append('threshold', threshold);
+            fd.append('tile_size', tileSize);
+
+            try {
+                const res = await fetch('/api/detect', { method: 'POST', body: fd });
+                const data = await res.json();
+
+                document.getElementById('resultImg').src = data.visualized_image;
+                document.getElementById('resultPlaceholder').classList.add('hidden');
+
+                document.getElementById('stats').classList.remove('hidden');
+                document.getElementById('statCount').innerText = data.plumes_detected;
+                document.getElementById('statArea').innerText = Math.round(data.total_area).toLocaleString() + ' px²';
+                document.getElementById('statStatus').innerText = data.plumes_detected > 0 ? 'Positive' : 'Negative';
+                document.getElementById('statStatus').className = data.plumes_detected > 0 ? 'text-4xl font-black text-amber-400' : 'text-4xl font-black text-emerald-400';
+
+                const coordsContainer = document.getElementById('coordsContainer');
+                const coordsBody = document.getElementById('coordsBody');
+                coordsBody.innerHTML = '';
+
+                if (data.detections && data.detections.length > 0) {
+                    coordsContainer.classList.remove('hidden');
+                    data.detections.forEach((det, index) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-slate-800/40 transition duration-150';
+                        row.innerHTML = `
+                            <td class="px-6 py-4 font-bold text-emerald-400">#${index + 1}</td>
+                            <td class="px-6 py-4 text-slate-300 font-mono">${det.center[0]}</td>
+                            <td class="px-6 py-4 text-slate-300 font-mono">${det.center[1]}</td>
+                            <td class="px-6 py-4 font-bold text-emerald-300">${det.percentage.toFixed(2)}%</td>
+                            <td class="px-6 py-4 text-slate-300 font-mono">${Math.round(det.area).toLocaleString()}</td>
+                        `;
+                        coordsBody.appendChild(row);
+                    });
+                } else {
+                    coordsContainer.classList.add('hidden');
+                }
+
+            } catch (e) {
+                alert('Detection failed: ' + e);
+            } finally {
+                runBtn.disabled = false;
+                runBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnText.innerText = 'Execute Analysis';
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+    </script>
+{% endblock %}
